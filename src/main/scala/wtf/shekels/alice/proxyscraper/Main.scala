@@ -12,10 +12,16 @@ object Main extends IOApp {
   def run(args: List[String]): IO[ExitCode] = {
     BasicConfigurator.configure()
 
-    ProxyScraper.getProxies.flatMap {
-      case Some(proxies) =>
-        println(proxies.size)
-        doItForever(RequestState(proxies, 2))(scraper.scrape.runS)
+//    ProxyScraper.getProxies.flatMap {
+//      case Some(proxies) =>
+//        println(proxies.size)
+//        doItForever(RequestState(proxies, 2))(scraper.scrape.runS)
+//    }
+
+    ProxyScraper.getProxiedClients.flatMap { clients =>
+      clients.use { proxiedClients =>
+        doItForever(RequestState(proxiedClients, 2))(scraper.scrape.runS)
+      }
     }
   }
 
