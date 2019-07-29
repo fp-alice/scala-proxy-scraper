@@ -74,4 +74,3 @@ proxy-scraper.ipr
 *.class
 *.log
 target
-/src/main/scala/wtf/shekels/alice/proxyscraper/objects/

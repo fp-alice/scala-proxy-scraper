@@ -3,28 +3,16 @@ package wtf.shekels.alice.proxyscraper.requests
 
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import io.circe.{Decoder, HCursor, Json}
+import cats.implicits._
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import io.netty.handler.ssl.{SslContext, SslContextBuilder}
 import org.asynchttpclient.Dsl
 import org.asynchttpclient.proxy.ProxyServer
-import org.http4s.Status.{NotFound, Successful}
+import org.http4s._
 import org.http4s.client.Client
 import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.http4s.client.middleware.Logger
 import org.http4s.implicits._
-import org.http4s.{EntityDecoder, Headers, Method, Uri, headers}
-import wtf.shekels.alice.proxyscraper.impl.RunescapeItem
-
-import io.circe._
-import io.circe.generic.auto._
-import io.circe.syntax._
-
-import org.http4s._
-import org.http4s.circe._
-import org.http4s.dsl.io._
-import org.http4s.implicits._
-import cats.implicits._
 
 import scala.concurrent.ExecutionContext.global
 
@@ -35,7 +23,7 @@ object ProxyScraper {
 
   val sslContext: SslContext = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build()
 
-  def getProxies: IO[Option[List[ProxyServer]]] = {
+  private def getProxies: IO[Option[List[ProxyServer]]] = {
     val config = Dsl.config().setSslContext(sslContext).build()
     val httpClient: Resource[IO, Client[IO]] = AsyncHttpClient.resource(config)
 
@@ -70,6 +58,21 @@ object ProxyScraper {
     })
   }
 
+  def request[R](uri: Uri, client: Client[IO])(implicit decoder: EntityDecoder[IO, R]): IO[Option[R]] = {
+    val acceptHeader = headers.Accept(org.http4s.MediaType.application.json)
+
+    val request = org.http4s.Request[IO](
+      Method.GET,
+      uri = uri,
+      headers = Headers.of(acceptHeader)
+    )
+
+    Logger(logBody = true, logHeaders = true)(client)
+      .expectOption[R](request)
+  }
+}
+
+
 //  implicit val decodeRunescapeItem: Decoder[RunescapeItem] = (c: HCursor) => {
 //    for {
 //      item <- c.downField("item").as[String]
@@ -89,17 +92,3 @@ object ProxyScraper {
 //      day180 <- c.downField("day180").as[List[String]]
 //    } yield RunescapeItem(item, icon, icon_large, itemType, typeIcon, name, members, trend, price, change, current, today, day30, day90, day180)
 //  }
-
-  def request(uri: Uri, client: Client[IO]): IO[Option[Json]] = {
-    val acceptHeader = headers.Accept(org.http4s.MediaType.application.json)
-
-    val request = org.http4s.Request[IO](
-      Method.GET,
-      uri = uri,
-      headers = Headers.of(acceptHeader)
-    )
-
-    Logger(logBody = true, logHeaders = true)(client)
-      .expectOption[Json](request)
-  }
-}

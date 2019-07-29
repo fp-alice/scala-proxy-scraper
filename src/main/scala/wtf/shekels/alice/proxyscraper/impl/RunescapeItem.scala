@@ -14,5 +14,4 @@ case class RunescapeItem(item: String,
                          today: List[String],
                          day30: List[String],
                          day90: List[String],
-                         day180: List[String]
-                        )
+                         day180: List[String])
