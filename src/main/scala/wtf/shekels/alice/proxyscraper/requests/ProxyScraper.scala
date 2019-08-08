@@ -15,6 +15,7 @@ import org.http4s.client.middleware.Logger
 import org.http4s.implicits._
 
 import scala.concurrent.ExecutionContext.global
+import scala.collection.JavaConverters._
 
 object ProxyScraper {
 
@@ -40,7 +41,7 @@ object ProxyScraper {
         .expect[String](request)
         .map {
           case s: String if s.nonEmpty =>
-            val proxies = s.lines
+            val proxies = s.lines.iterator().asScala
               .filter(_.contains(":"))
               .map(_.split(":"))
               .map {
